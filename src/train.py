@@ -10,7 +10,7 @@ import torch
 import yaml
 
 from model import MLP
-from dataset import Xcarre_dataset
+from dataset import Xcarre_dataset """A modifier : plus le même nom de classe"""
 
 def train(model, train_loader, criterion, optimizer):
     """
@@ -49,10 +49,10 @@ def main():
     """
     
     """
-    model = MLP(input=1, hidden=16, output=1)
+    model = MLP(input=1, hidden=16, output=1) """A modifier : plus les mêmes noms de paramètres & utiliser config.yaml"""
 
-    dataset = Xcarre_dataset(n_samples=1000) # 'n_samples' : ça correspond au nombre de données ; Donc soit on enlève soit on garde
-    train_loader, val_loader = dataset.get_loaders(batch_size=32)
+    dataset = Xcarre_dataset(n_samples=1000) """A modifier : utilise config.yaml""" # 'n_samples' : ça correspond au nombre de données ; Donc soit on enlève soit on garde
+    train_loader, val_loader = dataset.get_loaders(batch_size=32) """A modifier : utilise config.yaml""" # 'batch_size' : ça correspond au nombre de données par lot ; Donc soit on enlève soit on garde
 
     # Choisir la Loss
 

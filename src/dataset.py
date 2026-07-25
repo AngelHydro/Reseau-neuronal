@@ -19,9 +19,9 @@ class XCarreDataset(Dataset):
         return self.n_samples  # Retourne le nombre d'échantillons dans le jeu de données
 
     def __getitem__(self, idx):
-        return self.x[idx], self.x[idx]
+        return self.x[idx], self.x[idx]**2  # Retourne un échantillon (x, y) où y = x²
 
-    def loaders(self, batch_size=32, split_ratio=0.8):
+    def get_loaders(self, batch_size=32, split_ratio=0.8):
         # Crée des DataLoaders pour l'entraînement et la validation
         train_size = int(split_ratio * len(self))
         val_size = len(self) - train_size

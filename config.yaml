@@ -16,4 +16,4 @@ training:
   optimizer: "adam"
 
 checkpoint:
-  save_path: "checkpoints/best_model.pt"
+  save_path: "../checkpoints/best_model.pt"

@@ -1,18 +1,18 @@
 seed: 42
 
 data:
-  n_samples: 1000
-  train_ratio: 0.8
-  batch_size: 32
+  n_samples: 1000 # Nombre d'échantillons dans le jeu de données
+  train_ratio: 0.8 # Ratio de division entre les ensembles d'entraînement et de validation
+  batch_size: 32 # Taille du lot pour l'entraînement et la validation
 
 model:
-  input_dim: 1
-  hidden_dim: 32
-  output_dim: 1
+  input_dim: 1 # Dimension d'entrée du modèle (1 pour les données y = x²)
+  hidden_dim: 1024 # Dimension de la couche cachée du modèle
+  output_dim: 1 # Dimension de sortie du modèle (1 pour les données y = x²)
 
 training:
-  epochs: 2000
-  learning_rate: 0.01
+  epochs: 50 # Nombre d'époques pour l'entraînement du modèle
+  learning_rate: 0.01 # Taux d'apprentissage pour l'optimiseur
   optimizer: "adam"
 
 checkpoint:

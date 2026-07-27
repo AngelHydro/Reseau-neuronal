@@ -60,7 +60,7 @@ def evaluate(model, val_loader, criterion):
     return running_loss / len(val_loader)
 
 
-def saveCheckpoint(model, optimizer, epoch, save_path):
+def saveCheckpoint(model, optimizer, epoch, best_val_loss, save_path):
     """
     Fonction qui va enregistrer les entrainements dans le dossier 'checkpoints'
     sous l'extension '.pt'
@@ -71,6 +71,7 @@ def saveCheckpoint(model, optimizer, epoch, save_path):
         "epoch": epoch,
         "model_state_dict": model.state_dict(),
         "optimizer_state_dict": optimizer.state_dict(),
+        "best_val_loss": best_val_loss
     }
 
     torch.save(checkpoint, save_path)
@@ -84,9 +85,16 @@ def importSaveCheckpoint(save_path):
 
     model_state_dict = checkpoint["model_state_dict"]
     optimizer_state_dict = checkpoint["optimizer_state_dict"]
+    best_val_loss = checkpoint["best_val_loss"]
     startEpoch = checkpoint["epoch"] + 1
 
-    return startEpoch, model_state_dict, optimizer_state_dict
+    return startEpoch, model_state_dict, optimizer_state_dict, best_val_loss
+
+def compareCheckpoints(checkpoint1_path, checkpoint2_path):
+    """
+    Fonction qui compare la performance de deux checkpoints différents
+    """
+    pass
 
 def main():
     """
@@ -114,10 +122,25 @@ def main():
     (epochs, learning_rate, optimizer_name) = (config["training"]["epochs"],
                                                config["training"]["learning_rate"],
                                                config["training"]["optimizer"])
-    save_path = config["checkpoint"]["save_path"]
-    if not os.path.isabs(save_path):
-        save_path = os.path.abspath(os.path.join(script_dir, save_path))
-    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    
+    # save_path = config["checkpoint"]["save_path"] # pas besoin pour le moment
+
+    checkpoint_dir = os.path.abspath(os.path.join(script_dir, os.pardir, "checkpoints"))
+    os.makedirs(checkpoint_dir, exist_ok=True)
+
+    prefix_save_path = f"model_{input_dim}_{hidden_dim}_{output_dim}_{learning_rate}"
+    max_num = 1
+
+    for fichier in os.listdir(checkpoint_dir):
+        nom, _ = os.path.splitext(fichier)  # enlève l'extension
+
+        if nom.startswith(prefix_save_path):
+            numero = nom[len(prefix_save_path):]  # récupère ce qu'il y a après "model"
+
+            if numero.isdigit():
+                max_num = max(max_num, int(numero))
+
+    save_path = os.path.join(checkpoint_dir, f"{prefix_save_path}_{max_num + 1}.pt")
     
     # Chargement du modèle
     model = MLP(input_dim, hidden_dim, output_dim)
@@ -132,12 +155,15 @@ def main():
     optimizer = torch.optim.Adam(model.parameters(), learning_rate)
 
 
-    # On recharge la dernière save_checkpoint, si elle exite
+    # On recharge la dernière save_checkpoint, si elle existe
     startEpoch = 1
+    best_val_loss = float("inf")  # Initialisation de la meilleure perte de validation
+
     if os.path.exists(save_path):
-        startEpoch, model_state_dict, optimizer_state_dict = importSaveCheckpoint(save_path)
+        startEpoch, model_state_dict, optimizer_state_dict, best_val_loss = importSaveCheckpoint(save_path)
         model.load_state_dict(model_state_dict)
-        optimizer.load_state_dict(optimizer_state_dict)    
+        optimizer.load_state_dict(optimizer_state_dict)
+
     endEpoch = startEpoch + epochs - 1
 
     print("\nL'entrainement commence à Epoch", startEpoch, "\net se termine à Epoch", endEpoch) # à supprimer plus tard
@@ -171,13 +197,10 @@ def main():
 
         print("-" * 50)
 
-    # Sauvegarde
-    saveCheckpoint(model, optimizer, endEpoch, save_path)
-    """ il faudrait revoir où on veut faire le checkpoint
-        - soit à chaque tour de boucle d'entrainement
-        - soit à la fin de l'entrainement
-         ?
-    """
+        # Sauvegarde du modèle si la perte de validation est meilleure que la précédente
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            saveCheckpoint(model, optimizer, epoch, best_val_loss, save_path)
 
 
 

@@ -31,10 +31,10 @@ class XCarreDataset(Dataset):
 
     def get_loaders(self, batch_size=32, train_ratio=0.8):
         # Crée des DataLoaders pour l'entraînement et la validation
-        train_size = int(train_ratio * len(self))
-        val_size = len(self) - train_size
-        train_dataset, val_dataset = random_split(self, [train_size, val_size])
+        train_size = int(train_ratio * len(self)) # Calcule la taille du jeu de données d'entraînement en fonction du ratio spécifié
+        val_size = len(self) - train_size # Calcule la taille du jeu de données de validation comme le reste des échantillons
+        train_dataset, val_dataset = random_split(self, [train_size, val_size]) # Divise le jeu de données en ensembles d'entraînement et de validation
 
-        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-        val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True) # Crée un DataLoader pour l'ensemble d'entraînement avec mélange des données
+        val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False) # Crée un DataLoader pour l'ensemble de validation sans mélange des données
         return train_loader, val_loader

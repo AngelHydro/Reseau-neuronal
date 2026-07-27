@@ -5,6 +5,7 @@ entraîne le réseau, évalue ses performances et sauvegarde les poids appris.
 """
 
 # Les importations
+import os
 import torch
 import yaml
 
@@ -59,7 +60,7 @@ def evaluate(model, val_loader, criterion):
     return running_loss / len(val_loader)
 
 
-def save_checkpoint(model, optimizer, epoch, save_path):
+def saveCheckpoint(model, optimizer, epoch, save_path):
     """
     Fonction qui va enregistrer les entrainements dans le dossier 'checkpoints'
     sous l'extension '.pt'
@@ -74,6 +75,18 @@ def save_checkpoint(model, optimizer, epoch, save_path):
 
     torch.save(checkpoint, save_path)
 
+def importSaveCheckpoint(save_path):
+    """
+    Fonction qui importe un entrainement du dossier 'checkpoints'
+    qui retroune les paramètres enregistrés du save
+    """
+    checkpoint = torch.load(save_path)
+
+    model_state_dict = checkpoint["model_state_dict"]
+    optimizer_state_dict = checkpoint["optimizer_state_dict"]
+    startEpoch = checkpoint["epoch"] + 1
+
+    return startEpoch, model_state_dict, optimizer_state_dict
 
 def main():
     """
@@ -109,14 +122,25 @@ def main():
     # L'optimisateur chargé de mettre à jour les poids
     optimizer = torch.optim.Adam(model.parameters(), learning_rate)
 
+
+    # On recharge la dernière save_checkpoint, si elle exite
+    startEpoch = 1
+    if os.path.exists(save_path):
+        startEpoch, model_state_dict, optimizer_state_dict = importSaveCheckpoint(save_path)
+        model.load_state_dict(model_state_dict)
+        optimizer.load_state_dict(optimizer_state_dict)    
+    endEpoch = startEpoch + epochs - 1
+
+    print("\nL'entrainement commence à Epoch", startEpoch, "\net se termine à Epoch", endEpoch) # à supprimer plus tard
+
     # L'entrainement et l'évaluation en 'epochs' boucles
-    for epoch in range(epochs):
+    for epoch in range(startEpoch, endEpoch + 1):
         train_loss = train(model, train_loader, criterion, optimizer)
         val_loss = evaluate(model, val_loader, criterion)
 
 
         # ===== afficher résultat des valeurs de l'entrainement dans la console ===== #
-        print(f"\nEpoch {epoch + 1}")
+        print(f"\nEpoch {epoch}")
         print(f"Train Loss : {train_loss:.4f}")
         print(f"Val Loss   : {val_loss:.4f}")
 
@@ -139,7 +163,7 @@ def main():
         print("-" * 50)
 
     # Sauvegarde
-    save_checkpoint(model, optimizer, epochs, save_path)
+    saveCheckpoint(model, optimizer, endEpoch, save_path)
     """ il faudrait revoir où on veut faire le checkpoint
         - soit à chaque tour de boucle d'entrainement
         - soit à la fin de l'entrainement

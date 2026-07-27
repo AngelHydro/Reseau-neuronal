@@ -95,26 +95,35 @@ def main():
     puis lance l'entraînement, l'évaluation et la sauvegarde du modèle.
     """
 
-    with open("../config.yaml", "r") as file:
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    config_path = os.path.abspath(os.path.join(script_dir, os.pardir, "config.yaml"))
+
+    with open(config_path, "r") as file:
         config = yaml.safe_load(file)
-    (n_samples, batch_size, split_ratio) = (config["data"]["n_samples"],
+
+    torch.manual_seed(config["seed"])
+
+    (n_samples, batch_size, train_ratio) = (config["data"]["n_samples"],
                                             config["data"]["batch_size"],
-                                            config["data"]["split_ratio"])
+                                            config["data"]["train_ratio"])
     
     (input_dim, hidden_dim, output_dim) = (config["model"]["input_dim"],
                                            config["model"]["hidden_dim"],
                                            config["model"]["output_dim"])
 
-    (epochs, learning_rate, optimizer) = (config["training"]["epochs"],
-                                          config["training"]["learning_rate"],
-                                          config["training"]["optimizer"])
+    (epochs, learning_rate, optimizer_name) = (config["training"]["epochs"],
+                                               config["training"]["learning_rate"],
+                                               config["training"]["optimizer"])
     save_path = config["checkpoint"]["save_path"]
+    if not os.path.isabs(save_path):
+        save_path = os.path.abspath(os.path.join(script_dir, save_path))
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
     
     # Chargement du modèle
     model = MLP(input_dim, hidden_dim, output_dim)
 
     dataset = XCarreDataset(n_samples) # 'n_samples' : nombre de données
-    train_loader, val_loader = dataset.get_loaders(batch_size, split_ratio) # 'batch_size' : nombre de données par lot
+    train_loader, val_loader = dataset.get_loaders(batch_size, train_ratio) # 'batch_size' : nombre de données par lot
 
     # Fonction de coût
     criterion = torch.nn.MSELoss()
@@ -148,17 +157,17 @@ def main():
 
         # Récupère le premier batch du jeu de validation
         batch_x, batch_y = next(iter(val_loader))
-
-        # Désactive le calcul des gradients
         model.eval()
         with torch.no_grad():
             predictions = model(batch_x)
 
-        # Affiche les 5 premiers exemples
-        for x, pred, y in zip(batch_x[:5], predictions[:5], batch_y[:5]):
-            print(
-                f"x={x.item():.2f} -> prédiction={pred.item():.2f} (attendu={y.item():.2f})"
-            )
+        # Dénormalisation pour affichage lisible
+        x_reel = batch_x * dataset.x_std + dataset.x_mean
+        y_reel = batch_y * dataset.y_std + dataset.y_mean
+        pred_reel = predictions * dataset.y_std + dataset.y_mean
+
+        for x, pred, y in zip(x_reel[:5], pred_reel[:5], y_reel[:5]):
+            print(f"x={x.item():.2f} -> prédiction={pred.item():.2f} (attendu={y.item():.2f})")
 
         print("-" * 50)
 

@@ -21,3 +21,4 @@ class MLP(nn.Module):
     def forward(self, x):
         # Effectue la propagation avant du modèle
         return self.model(x)
+    
